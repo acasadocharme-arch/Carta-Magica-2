@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #060B19;
+    color: #EDF2F4;
+  }
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+.font-serif-vintage {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-handwriting {
+  font-family: 'Great Vibes', cursive, 'Georgia';
+}
+
+/* Custom Gold Glow & Magical Aesthetics */
+.gold-glow {
+  box-shadow: 0 0 25px rgba(255, 209, 102, 0.35);
+}
+
+.gold-glow-lg {
+  box-shadow: 0 0 45px rgba(255, 209, 102, 0.45);
+}
+
+.red-glow {
+  box-shadow: 0 0 25px rgba(217, 4, 41, 0.35);
+}
+
+.magical-shadow {
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 209, 102, 0.2);
+}
+
+.wax-seal {
+  background: radial-gradient(circle at 35% 35%, #EF233C 0%, #D90429 50%, #780016 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -3px 6px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.parchment-bg {
+  background-color: #FCF9F2;
+  background-image: radial-gradient(#F3EBD8 1px, transparent 1px), radial-gradient(#E8DCBF 1px, #FCF9F2 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+}
+
+/* Print Styles for A4 Letter PDF Generation */
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm;
+}
+
+@media print {
+  html, body {
+    background: #FFFFFF !important;
+    color: #1C2541 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print, 
+  nav, 
+  footer, 
+  aside,
+  button, 
+  .modal, 
+  .toast,
+  #christmas-ambient-player,
+  #snow-intensity-control,
+  canvas {
+    display: none !important;
+  }
+
+  /* Reset layout constraints during print to isolate #printable-letter */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #printable-letter {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 190mm !important;
+    min-height: 255mm !important;
+    margin: 0 auto !important;
+    padding: 16mm 16mm !important;
+    box-shadow: none !important;
+    border: 3px double #C49A45 !important;
+    background: #FFFEFA !important;
+    color: #1C2541 !important;
+    font-size: 11.5pt !important;
+    line-height: 1.55 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    border-radius: 8px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #printable-letter * {
+    color: inherit;
+    text-shadow: none !important;
+  }
+
+  #printable-letter .wax-seal {
+    border: 2px solid #9B021A !important;
+    background: #9B021A !important;
+    color: #FFD166 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Keep stamps and decorative badges visible and sharp */
+  #printable-letter .stamp-container {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0B132B;
+}
+::-webkit-scrollbar-thumb {
+  background: #1C2541;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 209, 102, 0.2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2A385B;
+}
