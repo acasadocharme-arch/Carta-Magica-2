@@ -102,8 +102,13 @@ export default function ChildPublicView({
           </div>
 
           {letter.photoUrl && (
-            <div className="w-20 h-20 rounded-full mx-auto overflow-hidden border-2 border-[#FFD166] shadow-md">
-              <img src={letter.photoUrl} alt={letter.childName} className="w-full h-full object-cover" />
+            <div className="inline-block bg-[#FFFDF9] p-2 rounded-2xl shadow-xl border-2 border-[#FFD166] transform -rotate-2">
+              <div className="w-20 h-20 rounded-xl overflow-hidden border border-[#C49A45]/40 relative bg-amber-50">
+                <img src={letter.photoUrl} alt={letter.childName} className="w-full h-full object-cover" />
+              </div>
+              <div className="text-[10px] font-serif font-bold text-[#1C2541] mt-1 truncate max-w-[80px]">
+                {letter.childName}
+              </div>
             </div>
           )}
 
@@ -270,8 +275,29 @@ export default function ChildPublicView({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-[#1C2541]/15 pb-6 mb-8 gap-4">
               <div className="flex items-center gap-4">
                 {letter.photoUrl && (
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#9B021A] shrink-0 shadow-sm">
-                    <img src={letter.photoUrl} alt={letter.childName} className="w-full h-full object-cover" />
+                  <div className="relative shrink-0">
+                    <div className="bg-[#FFFDF9] p-1.5 rounded-xl shadow-md border-2 border-[#C49A45] transform -rotate-2">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-[#C49A45]/40 relative bg-amber-50">
+                        <img
+                          src={letter.photoUrl}
+                          alt={`Retrato de ${letter.childName}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {isPro && (
+                          <div className="absolute -bottom-1 -right-1 bg-[#D90429] text-[#FFD166] text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-[#FFD166] shadow">
+                            PRO
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-center mt-1">
+                        <span className="text-[9px] font-serif font-bold text-[#1C2541] block leading-none truncate max-w-[64px] sm:max-w-[80px]">
+                          {letter.childName}
+                        </span>
+                        <span className="text-[7px] font-mono text-[#9B021A] block uppercase leading-none mt-0.5">
+                          {isPro ? "Oficial" : "Arquivo"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div>

@@ -83,12 +83,14 @@ Com carinho, Papai Noel 🎅`;
   }
 }
 
+export const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/vrbnn78e3935jocc";
+
 export async function processCheckoutAPI(payload: {
   letterId: string;
   childName: string;
   includePhysicalDispatch?: boolean;
   address?: ShippingAddress;
-}): Promise<{ success: boolean; order: Order; message: string }> {
+}): Promise<{ success: boolean; order: Order; message: string; asaasCheckoutUrl?: string }> {
   try {
     const res = await fetch("/api/checkout", {
       method: "POST",
@@ -107,14 +109,15 @@ export async function processCheckoutAPI(payload: {
       plan: "pro",
       includePhysicalDispatch: Boolean(payload.includePhysicalDispatch),
       status: "paid",
-      paymentMethod: "Cartão de Crédito / Pix",
+      paymentMethod: "Asaas (Pix / Cartão)",
       createdAt: new Date().toLocaleString("pt-BR"),
       paidAt: new Date().toLocaleString("pt-BR")
     };
     return {
       success: true,
       order,
-      message: "Experiência Mágica PRO liberada com sucesso!"
+      message: "Pagamento processado com sucesso via Asaas!",
+      asaasCheckoutUrl: ASAAS_CHECKOUT_URL
     };
   }
 }
@@ -427,6 +430,27 @@ export async function submitChildReactionAPI(
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+export async function fetchElfSuggestionsAPI(params: {
+  field: string;
+  childName?: string;
+  age?: number;
+  city?: string;
+}): Promise<string[]> {
+  try {
+    const res = await fetch("/api/elf-suggestions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) throw new Error("Erro ao buscar sugestões do elfo");
+    const data = await res.json();
+    return Array.isArray(data.suggestions) ? data.suggestions : [];
+  } catch (err) {
+    console.error("fetchElfSuggestionsAPI error:", err);
+    return [];
   }
 }
 

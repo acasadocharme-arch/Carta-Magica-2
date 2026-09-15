@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import SnowCanvas from "./components/SnowCanvas";
+import SantaSleigh from "./components/SantaSleigh";
+import ChristmasLights from "./components/ChristmasLights";
+import SantaWelcomeToast from "./components/SantaWelcomeToast";
 import Navbar from "./components/Navbar";
 import LandingHero from "./components/LandingHero";
 import HowItWorks from "./components/HowItWorks";
 import SampleLetterPreview from "./components/SampleLetterPreview";
 import PricingSection from "./components/PricingSection";
 import FAQSection from "./components/FAQSection";
+import TestimonialsSection from "./components/TestimonialsSection";
 import FinalCTA from "./components/FinalCTA";
 import CreationWizard from "./components/CreationWizard";
 import LetterView from "./components/LetterView";
@@ -14,11 +18,26 @@ import AdminPanel from "./components/AdminPanel";
 import PaywallModal from "./components/PaywallModal";
 import CheckoutModal from "./components/CheckoutModal";
 import LogisticsModal from "./components/LogisticsModal";
+import MenuInfoModal, { MenuTab } from "./components/MenuInfoModal";
 import { AudioPlayer } from "./components/AudioPlayer";
 import { Letter, PlanType } from "./types";
 import { fetchLetterByTokenAPI } from "./services/api";
 import { initUTMTracking, trackEvent } from "./services/analytics";
 import { Heart, Sparkles, ShieldCheck } from "lucide-react";
+import { motion } from "motion/react";
+
+function FadeInScrollSection({ children }: { children: ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"landing" | "wizard" | "letter" | "child" | "admin">("landing");
@@ -29,6 +48,7 @@ export default function App() {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isLogisticsOpen, setIsLogisticsOpen] = useState(false);
+  const [menuInfoTab, setMenuInfoTab] = useState<MenuTab | null>(null);
 
   // Handle URL paths and UTM initialization on mount
   useEffect(() => {
@@ -82,6 +102,19 @@ export default function App() {
     }
   };
 
+  const handleOpenMenuInfo = (tab: MenuTab) => {
+    trackEvent("menu_tab_clicked" as any, { tab });
+    setMenuInfoTab(tab);
+  };
+
+  const handleNavigateHome = () => {
+    setMenuInfoTab(null);
+    if (currentView !== "landing") {
+      setCurrentView("landing");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const scrollToSection = (id: string) => {
     if (currentView !== "landing") {
       setCurrentView("landing");
@@ -101,13 +134,21 @@ export default function App() {
       {/* Subtle Interactive Falling Snow Canvas */}
       <SnowCanvas />
 
+      {/* Festive Glowing Christmas Fairy Lights along the top edge */}
+      <ChristmasLights />
+
+      {/* Animated Santa Sleigh & Reindeer gliding across the night sky */}
+      <SantaSleigh />
+
       {/* Header Navigation Bar */}
       <Navbar
         onNavigate={(v) => setCurrentView(v as any)}
         onStartWizard={() => handleStartWizard("free")}
-        onOpenLogistics={() => setIsLogisticsOpen(true)}
+        onOpenLogistics={() => handleOpenMenuInfo("rastreio")}
         onOpenAdmin={() => setCurrentView("admin")}
         currentView={currentView}
+        onOpenMenuInfo={handleOpenMenuInfo}
+        onNavigateHome={handleNavigateHome}
       />
 
       {/* Main View Switcher */}
@@ -119,21 +160,40 @@ export default function App() {
               onScrollTo={scrollToSection}
               onViewSample={() => scrollToSection("amostra")}
             />
-            <HowItWorks
-              onStartWizard={() => handleStartWizard("free")}
-              onOpenLogistics={() => setIsLogisticsOpen(true)}
-            />
-            <SampleLetterPreview
-              onStartWizard={handleStartWizard}
-            />
-            <PricingSection
-              onStartWizard={handleStartWizard}
-              onOpenLogistics={() => setIsLogisticsOpen(true)}
-            />
-            <FAQSection />
-            <FinalCTA
-              onStartWizard={handleStartWizard}
-            />
+
+            <FadeInScrollSection>
+              <HowItWorks
+                onStartWizard={() => handleStartWizard("free")}
+                onOpenLogistics={() => setIsLogisticsOpen(true)}
+              />
+            </FadeInScrollSection>
+
+            <FadeInScrollSection>
+              <SampleLetterPreview
+                onStartWizard={handleStartWizard}
+              />
+            </FadeInScrollSection>
+
+            <FadeInScrollSection>
+              <TestimonialsSection />
+            </FadeInScrollSection>
+
+            <FadeInScrollSection>
+              <PricingSection
+                onStartWizard={handleStartWizard}
+                onOpenLogistics={() => setIsLogisticsOpen(true)}
+              />
+            </FadeInScrollSection>
+
+            <FadeInScrollSection>
+              <FAQSection />
+            </FadeInScrollSection>
+
+            <FadeInScrollSection>
+              <FinalCTA
+                onStartWizard={handleStartWizard}
+              />
+            </FadeInScrollSection>
           </div>
         )}
 
@@ -195,16 +255,19 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6">
-            <button onClick={() => scrollToSection("como-funciona")} className="hover:text-white cursor-pointer">
+            <button onClick={() => handleOpenMenuInfo("como-funciona")} className="hover:text-white cursor-pointer">
               Como Funciona
             </button>
-            <button onClick={() => scrollToSection("planos")} className="hover:text-white cursor-pointer">
+            <button onClick={() => scrollToSection("depoimentos")} className="hover:text-white cursor-pointer">
+              Depoimentos
+            </button>
+            <button onClick={() => handleOpenMenuInfo("planos")} className="hover:text-white cursor-pointer">
               Planos & Preços
             </button>
-            <button onClick={() => scrollToSection("faq")} className="hover:text-white cursor-pointer">
-              Dúvidas
+            <button onClick={() => handleOpenMenuInfo("faq")} className="hover:text-white cursor-pointer">
+              Dúvidas FAQ
             </button>
-            <button onClick={() => setIsLogisticsOpen(true)} className="hover:text-white cursor-pointer">
+            <button onClick={() => handleOpenMenuInfo("rastreio")} className="hover:text-white cursor-pointer">
               Envio Postal Físico
             </button>
             <button onClick={() => setCurrentView("admin")} className="hover:text-[#FFD166] text-[11px] font-mono cursor-pointer">
@@ -222,6 +285,21 @@ export default function App() {
 
       {/* Discrete Ambient Christmas Audio Player */}
       <AudioPlayer />
+
+      {/* Festive Santa Welcome Toast (smoothly triggered 3s after load) */}
+      <SantaWelcomeToast onStartWizard={handleStartWizard} />
+
+      {/* Interactive Menu Explanations Modal */}
+      <MenuInfoModal
+        isOpen={menuInfoTab !== null}
+        activeTab={menuInfoTab}
+        onClose={() => setMenuInfoTab(null)}
+        onSelectTab={(tab) => setMenuInfoTab(tab)}
+        onStartWizard={(plan = "free") => {
+          setMenuInfoTab(null);
+          handleStartWizard(plan);
+        }}
+      />
 
       {/* MODALS */}
       <PaywallModal

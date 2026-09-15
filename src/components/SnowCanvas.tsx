@@ -1,28 +1,27 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Snowflake, Sliders, X, Eye, EyeOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Snowflake, X } from "lucide-react";
 
 interface Flake {
   x: number;
   y: number;
   r: number;
   d: number;
-  opacity: number;
   speed: number;
 }
 
 export default function SnowCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Initialize intensity from localStorage or default to 50
+  // Initialize intensity from localStorage or default to 45
   const [intensity, setIntensity] = useState<number>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("snow_intensity");
       if (saved !== null) {
         const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= 0 && val <= 150) return val;
+        if (!isNaN(val) && val >= 0 && val <= 140) return val;
       }
     }
-    return 55;
+    return 45;
   });
 
   const [isControlOpen, setIsControlOpen] = useState(false);
@@ -31,7 +30,7 @@ export default function SnowCanvas() {
 
   // Persist preference to localStorage
   const handleIntensityChange = (val: number) => {
-    const clamped = Math.max(0, Math.min(140, val));
+    const clamped = Math.max(0, Math.min(120, val));
     setIntensity(clamped);
     if (typeof window !== "undefined") {
       localStorage.setItem("snow_intensity", clamped.toString());
@@ -44,81 +43,142 @@ export default function SnowCanvas() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId: number | null = null;
+    let resizeRafId: number | null = null;
+    let isRunning = false;
+    let lastFrameTime = 0;
+
+    // Detect mobile device for CPU-friendly particle budget
+    const isMobile =
+      typeof window !== "undefined" &&
+      (window.innerWidth < 768 ||
+        ("ontouchstart" in window && navigator.maxTouchPoints > 0));
+
+    // Cap particles on mobile to avoid CPU/battery drain
+    const MAX_FLAKES = isMobile ? 40 : 90;
+
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
+    // Debounced/rAF-governed resize handler with passive listener
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      if (resizeRafId !== null) return;
+      resizeRafId = requestAnimationFrame(() => {
+        resizeRafId = null;
+        if (!canvas) return;
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
 
-    // Pre-allocate maximum particle pool (150 flakes) for zero garbage collection overhead
-    const MAX_FLAKES = 150;
+    // Pre-allocate fixed flake pool for zero garbage collection overhead
     const flakes: Flake[] = Array.from({ length: MAX_FLAKES }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      r: Math.random() * 2.2 + 0.8,
-      d: Math.random() * 100,
-      opacity: Math.random() * 0.6 + 0.25,
-      speed: Math.random() * 0.8 + 0.4,
+      r: Math.random() * 1.8 + 0.8,
+      d: Math.random() * 50,
+      speed: Math.random() * 0.7 + 0.4,
     }));
 
     let angle = 0;
 
-    const render = () => {
+    const render = (timestamp: number) => {
       const currentCount = intensityRef.current;
 
-      // If user turned off snow, clear and idle without CPU loop
+      // If user turned off snow, clear canvas once and halt rAF to consume 0% CPU
       if (currentCount <= 0) {
         ctx.clearRect(0, 0, width, height);
-        animationFrameId = requestAnimationFrame(render);
+        isRunning = false;
+        animationFrameId = null;
         return;
       }
 
+      // Frame rate limiter (~60 FPS max cap on 90Hz/120Hz mobile screens)
+      if (timestamp - lastFrameTime < 16) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+      lastFrameTime = timestamp;
+
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "rgba(237, 242, 244, 0.75)";
+      ctx.fillStyle = "rgba(237, 242, 244, 0.72)";
       ctx.beginPath();
 
-      const activeFlakes = Math.min(currentCount, MAX_FLAKES);
+      // Mobile scale factor to limit particle count on smaller screens
+      const activeFlakes = Math.min(
+        isMobile ? Math.floor(currentCount * 0.45) : currentCount,
+        MAX_FLAKES
+      );
 
       for (let i = 0; i < activeFlakes; i++) {
         const f = flakes[i];
         ctx.moveTo(f.x, f.y);
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
       }
       ctx.fill();
 
-      angle += 0.008;
+      angle += 0.007;
       for (let i = 0; i < activeFlakes; i++) {
         const f = flakes[i];
         f.y += Math.cos(angle + f.d) + f.speed;
-        f.x += Math.sin(angle) * 0.6;
+        f.x += Math.sin(angle) * 0.5;
 
         if (f.x > width + 5 || f.x < -5 || f.y > height) {
           f.x = Math.random() * width;
-          f.y = -8;
+          f.y = -6;
         }
       }
 
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    const startAnimation = () => {
+      if (!isRunning && intensityRef.current > 0) {
+        isRunning = true;
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+
+    const stopAnimation = () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      isRunning = false;
+    };
+
+    // Pause animation when tab or mobile browser is in background
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopAnimation();
+      } else {
+        startAnimation();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange, {
+      passive: true,
+    });
+
+    // Start initial loop
+    startAnimation();
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      stopAnimation();
+      if (resizeRafId !== null) {
+        cancelAnimationFrame(resizeRafId);
+      }
     };
-  }, []);
+  }, [intensity]); // Re-evaluate if intensity transitions from 0 to > 0
 
   const getIntensityLabel = (val: number) => {
     if (val === 0) return "Neve Desligada";
-    if (val < 35) return "Neve Serena";
-    if (val < 75) return "Neve Clássica";
+    if (val < 30) return "Neve Serena";
+    if (val < 65) return "Neve Clássica";
     return "Nevasca Mágica";
   };
 

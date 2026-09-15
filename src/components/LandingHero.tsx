@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, ArrowRight, ShieldCheck, Heart, Volume2, Stamp } from "lucide-react";
 import { motion } from "motion/react";
+import ChristmasCountdown from "./ChristmasCountdown";
 import santaHeroImg from "../assets/images/santa_hero_transparent.png";
 
 interface LandingHeroProps {
@@ -45,6 +46,11 @@ export default function LandingHero({
           <p className="text-base sm:text-lg text-[#EDF2F4]/80 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
             Crie uma experiência mágica e personalizada que seu filho vai lembrar para sempre.
           </p>
+
+          {/* Elegant Christmas Countdown for Dec 25 */}
+          <div className="pt-1 flex justify-center lg:justify-start">
+            <ChristmasCountdown />
+          </div>
 
           {/* Social Proof & Trust snippet */}
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 text-xs text-[#EDF2F4]/70 pt-1">

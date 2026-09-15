@@ -9,13 +9,15 @@ import {
   SkipForward, 
   Sparkles,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Minus
 } from "lucide-react";
 import { christmasAudio } from "../lib/christmasAudio";
 
 export const AudioPlayer: React.FC = () => {
   const [audioState, setAudioState] = useState(() => christmasAudio.getState());
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     const unsubscribe = christmasAudio.subscribe(() => {
@@ -51,10 +53,41 @@ export const AudioPlayer: React.FC = () => {
     ? Volume1 
     : Volume2;
 
+  // Render ultra-compact floating badge when minimized to ensure zero interference with CTAs
+  if (isMinimized) {
+    return (
+      <aside 
+        aria-label="Player de Trilha Sonora Natalina"
+        className="fixed bottom-4 left-4 z-30 select-none no-print"
+        id="christmas-ambient-player"
+      >
+        <button
+          onClick={() => setIsMinimized(false)}
+          className="h-9 sm:h-10 px-3 rounded-full bg-[#0B132B]/95 hover:bg-[#1C2541] border border-[#FFD166]/60 text-[#FFD166] shadow-[0_6px_20px_rgba(0,0,0,0.6)] flex items-center gap-2 transition-all hover:scale-105 cursor-pointer backdrop-blur-md group"
+          title="Abrir Player de Música Natalina"
+          aria-label="Abrir Player de Música Natalina"
+        >
+          {audioState.isPlaying ? (
+            <>
+              <Volume2 className="w-4 h-4 text-[#FFD166] animate-pulse" />
+              <span className="text-[11px] font-bold text-white hidden sm:inline">Música Ativa</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            </>
+          ) : (
+            <>
+              <Music className="w-4 h-4 text-[#FFD166]" />
+              <span className="text-[11px] font-medium text-[#EDF2F4]/80 hidden sm:inline">Trilha Natalina</span>
+            </>
+          )}
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside 
       aria-label="Player de Trilha Sonora Natalina"
-      className="fixed bottom-4 left-4 z-40 select-none max-w-[calc(100vw-2rem)]"
+      className="fixed bottom-4 left-4 z-30 select-none max-w-[calc(100vw-2rem)] no-print"
       id="christmas-ambient-player"
     >
       <div 
@@ -68,7 +101,7 @@ export const AudioPlayer: React.FC = () => {
             {/* Play/Pause Button */}
             <button
               onClick={handleTogglePlay}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-md shrink-0 ${
                 audioState.isPlaying
                   ? "bg-[#D90429] hover:bg-[#EF233C] text-white ring-2 ring-[#FFD166]/40"
                   : "bg-[#1C2541] hover:bg-[#FFD166] text-[#FFD166] hover:text-[#0B132B]"
@@ -86,25 +119,25 @@ export const AudioPlayer: React.FC = () => {
             {/* Track Info & Equalizer */}
             <div 
               onClick={() => setIsExpanded(true)}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-2 cursor-pointer group truncate"
               title="Clique para abrir controles completos de áudio"
             >
               {/* Animated Mini Equalizer Bars when playing */}
               {audioState.isPlaying ? (
-                <div className="flex items-end gap-0.5 h-3.5 w-3.5 pb-0.5">
+                <div className="flex items-end gap-0.5 h-3.5 w-3.5 pb-0.5 shrink-0">
                   <span className="w-0.5 bg-[#FFD166] rounded-full animate-[pulse_0.7s_infinite] h-2" />
                   <span className="w-0.5 bg-[#FFD166] rounded-full animate-[pulse_0.5s_infinite] h-3.5" />
                   <span className="w-0.5 bg-[#FFD166] rounded-full animate-[pulse_0.8s_infinite] h-1.5" />
                 </div>
               ) : (
-                <Music className="w-3.5 h-3.5 text-[#FFD166]/70 group-hover:text-[#FFD166] transition-colors" />
+                <Music className="w-3.5 h-3.5 text-[#FFD166]/70 group-hover:text-[#FFD166] transition-colors shrink-0" />
               )}
 
-              <div className="flex flex-col text-left">
-                <span className="text-[11px] font-bold text-[#FFD166] tracking-wide leading-tight flex items-center gap-1">
+              <div className="flex flex-col text-left truncate">
+                <span className="text-[11px] font-bold text-[#FFD166] tracking-wide leading-tight flex items-center gap-1 truncate">
                   {audioState.currentTrack.title}
                   {audioState.isPlaying && (
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
                   )}
                 </span>
                 <span className="text-[9px] text-[#EDF2F4]/60 group-hover:text-[#EDF2F4]/80 transition-colors">
@@ -113,8 +146,8 @@ export const AudioPlayer: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Mute & Expand Buttons */}
-            <div className="flex items-center gap-1 ml-auto">
+            {/* Quick Mute, Expand & Minimize Buttons */}
+            <div className="flex items-center gap-1 ml-auto shrink-0">
               <button
                 onClick={handleToggleMute}
                 className="p-1.5 text-[#EDF2F4]/70 hover:text-[#FFD166] rounded-lg transition-colors cursor-pointer"
@@ -132,6 +165,15 @@ export const AudioPlayer: React.FC = () => {
               >
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
+
+              <button
+                onClick={() => setIsMinimized(true)}
+                className="p-1 text-[#EDF2F4]/40 hover:text-[#FFD166] rounded-lg transition-colors cursor-pointer"
+                title="Minimizar player para não atrapalhar"
+                aria-label="Minimizar player"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ) : (
@@ -145,14 +187,24 @@ export const AudioPlayer: React.FC = () => {
                   Trilha Sonora Natalina
                 </span>
               </div>
-              <button
-                onClick={() => setIsExpanded(false)}
-                className="text-[#EDF2F4]/50 hover:text-white p-1 rounded transition-colors cursor-pointer"
-                title="Minimizar player"
-                aria-label="Minimizar"
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIsMinimized(true)}
+                  className="text-[#EDF2F4]/50 hover:text-[#FFD166] p-1 rounded transition-colors cursor-pointer"
+                  title="Minimizar player"
+                  aria-label="Minimizar player"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className="text-[#EDF2F4]/50 hover:text-white p-1 rounded transition-colors cursor-pointer"
+                  title="Fechar painel expandido"
+                  aria-label="Recolher"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Current Track Banner */}

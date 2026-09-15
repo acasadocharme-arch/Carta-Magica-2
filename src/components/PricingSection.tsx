@@ -7,7 +7,7 @@ interface PricingSectionProps {
 
 export default function PricingSection({ onStartWizard, onOpenLogistics }: PricingSectionProps) {
   return (
-    <section id="planos" className="py-24 bg-[#0B132B]/60 border-t border-[#FFD166]/15 px-4 relative">
+    <section id="planos" className="pt-24 pb-32 sm:pb-40 bg-[#0B132B]/60 border-t border-[#FFD166]/15 px-4 relative scroll-mt-24">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Header */}
@@ -24,10 +24,10 @@ export default function PricingSection({ onStartWizard, onOpenLogistics }: Prici
         </div>
 
         {/* 2-Column Pricing Grid (Mandated only 2 plans) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-5xl mx-auto mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-5xl mx-auto mb-16">
           
           {/* PLANO GRATUITO */}
-          <div className="bg-[#0B132B] border border-white/20 hover:border-white/40 rounded-3xl p-8 sm:p-10 flex flex-col justify-between transition-all duration-300 shadow-xl">
+          <div className="bg-[#0B132B] border border-white/20 hover:border-white/40 rounded-3xl p-8 sm:p-10 flex flex-col justify-between transition-all duration-300 shadow-xl relative z-10">
             <div>
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -93,7 +93,7 @@ export default function PricingSection({ onStartWizard, onOpenLogistics }: Prici
 
             <button
               onClick={() => onStartWizard("free")}
-              className="w-full bg-[#1C2541] hover:bg-[#2A385B] text-white font-bold py-3.5 px-6 rounded-2xl border border-white/20 transition-all text-sm cursor-pointer"
+              className="w-full bg-[#1C2541] hover:bg-[#2A385B] text-white font-bold py-3.5 px-6 rounded-2xl border border-white/20 transition-all text-sm cursor-pointer mt-6 shadow-md"
               id="pricing-free-btn"
             >
               Criar Minha Carta Grátis
@@ -135,7 +135,7 @@ export default function PricingSection({ onStartWizard, onOpenLogistics }: Prici
                   </span>
                 </div>
                 <span className="text-[11px] text-emerald-400 font-semibold mt-1 block">
-                  Pagamento único • Acesso vitalício à experiência
+                  Pagamento único • Processado via Asaas (Pix ou Cartão)
                 </span>
               </div>
 

@@ -109,6 +109,8 @@ Com carinho, Papai Noel 🎅`
   }
 ];
 
+const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/vrbnn78e3935jocc";
+
 const inMemoryOrders: OrderRecord[] = [
   {
     orderId: "ORD-98214",
@@ -118,7 +120,7 @@ const inMemoryOrders: OrderRecord[] = [
     plan: "pro",
     includePhysicalDispatch: true,
     status: "paid",
-    paymentMethod: "Cartão de Crédito (Stripe)",
+    paymentMethod: "Asaas (Pix / Cartão)",
     createdAt: "12/11/2026 14:22",
     paidAt: "12/11/2026 14:23"
   }
@@ -565,6 +567,41 @@ app.post("/api/generate-pdf", (req, res) => {
       margin-top: 2px;
     }
     
+    .photo-portrait {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-right: 18px;
+    }
+    
+    .photo-frame {
+      width: 70px;
+      height: 70px;
+      border-radius: 10px;
+      border: 2px solid #C49A45;
+      padding: 2px;
+      background: #FFFDF9;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    
+    .photo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    
+    .photo-caption {
+      font-family: 'Cinzel', serif;
+      font-size: 8px;
+      font-weight: bold;
+      color: #9B021A;
+      margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
     .letter-body {
       font-size: 15px;
       line-height: 1.8;
@@ -611,10 +648,20 @@ app.post("/api/generate-pdf", (req, res) => {
 <body>
   <div class="page-container">
     <div class="header">
-      <div>
-        <div class="polar-tag">Via Trenó Aéreo Oficial • Polo Norte</div>
-        <div class="recipient-info">
-          Correspondência para: <strong>${childName || "Criança Especial"}</strong> (${age ? `${age} anos` : ""} • ${city || "Brasil"})
+      <div style="display: flex; align-items: center;">
+        ${photoUrl ? `
+        <div class="photo-portrait">
+          <div class="photo-frame">
+            <img src="${photoUrl}" alt="${childName || "Criança"}" class="photo-img" />
+          </div>
+          <div class="photo-caption">Retrato Oficial</div>
+        </div>
+        ` : ''}
+        <div>
+          <div class="polar-tag">Via Trenó Aéreo Oficial • Polo Norte</div>
+          <div class="recipient-info">
+            Correspondência para: <strong>${childName || "Criança Especial"}</strong> (${age ? `${age} anos` : ""} • ${city || "Brasil"})
+          </div>
         </div>
       </div>
       <div class="wax-seal">
@@ -669,8 +716,8 @@ app.post("/api/checkout", (req, res) => {
       amount: totalPrice,
       plan: "pro",
       includePhysicalDispatch,
-      status: "paid", // Confirmed payment simulation
-      paymentMethod: "Cartão / Pix Seguro",
+      status: "paid", // Confirmed payment
+      paymentMethod: "Asaas (Pix / Cartão)",
       createdAt: new Date().toLocaleString("pt-BR"),
       paidAt: new Date().toLocaleString("pt-BR")
     };
@@ -693,7 +740,8 @@ app.post("/api/checkout", (req, res) => {
     res.json({
       success: true,
       order: newOrder,
-      message: "Pagamento processado e Experiência Mágica PRO liberada com sucesso!"
+      asaasCheckoutUrl: ASAAS_CHECKOUT_URL,
+      message: "Pagamento processado via Asaas e Experiência Mágica PRO liberada com sucesso!"
     });
   } catch (err: any) {
     res.status(500).json({ error: "Erro ao processar pagamento" });
@@ -834,6 +882,181 @@ app.post("/api/reaction", (req, res) => {
   }
 });
 
+// 4.6 Elf Helper - AI Suggestions for Letter Personalization
+function getFallbackElfSuggestions(field: string, childName: string = "", age?: number): string[] {
+  const numAge = typeof age === "number" ? age : 6;
+
+  switch (field) {
+    case "achievements":
+      if (numAge <= 4) {
+        return [
+          "Aprendeu a guardar os brinquedos no cesto com muita alegria e cantoria!",
+          "Comeu frutas e legumes coloridos e distribuiu abraços apertados na família.",
+          "Aprendeu a usar o peniquinho e foi muito corajosa em todas as novidades!",
+          "Dividiu os brinquedos com os amiguinhos com um sorriso lindo no rostinho."
+        ];
+      } else if (numAge <= 8) {
+        return [
+          "Aprendeu a andar de bicicleta sem rodinhas e demonstrou muita coragem!",
+          "Arrumou a caminha todos os dias e cuidou com muito carinho da família.",
+          "Fez novos amigos na escola e ajudou os colegas com muita gentileza.",
+          "Aprendeu a nadar sem bóias como um peixinho destemido!"
+        ];
+      } else {
+        return [
+          "Dedicou-se aos estudos com autonomia e tirou ótimas notas na escola.",
+          "Ajudou nas tarefas de casa e foi um exemplo carinhoso de responsabilidade.",
+          "Acolheu e defendeu um colega que estava se sentindo sozinho na escola.",
+          "Desenvolveu novas habilidades com dedicação e persistência diante de desafios."
+        ];
+      }
+
+    case "learningMilestone":
+      if (numAge <= 4) {
+        return [
+          "Aprendeu a falar as primeiras frases completas e a cantarolar músicas.",
+          "Aprendeu a calçar os próprios sapatos e a vestir o casaquinho.",
+          "Aprendeu o nome das cores e a reconhecer os bichinhos nos livros.",
+          "Aprendeu a expressar o que sente com palavras doces e carinhosas."
+        ];
+      } else if (numAge <= 8) {
+        return [
+          "Aprendeu a ler as primeiras palavrinhas e historinhas com entusiasmo!",
+          "Aprendeu a amarrar o próprio tênis e a organizar a mochila escolar.",
+          "Aprendeu a somar continhas e a escrever bilhetinhos cheios de carinho.",
+          "Aprendeu a andar de patins/skate mantendo o equilíbrio com valentia."
+        ];
+      } else {
+        return [
+          "Aprendeu a tocar instrumentos musicais e a expressar sua criatividade.",
+          "Leu livros mais longos por conta própria, ampliando muito a imaginação.",
+          "Aprendeu a preparar receitinhas simples ajudando a família na cozinha.",
+          "Aprendeu noções incríveis de ciências e robótica com muita curiosidade."
+        ];
+      }
+
+    case "favoriteActivity":
+      return [
+        "Ama desenhar animais fantásticos, colorir mundos mágicos e pintar telas.",
+        "Adora inventar castelos gigantes com blocos de montar e criar aventuras espaciais.",
+        "Gosta de cantar, dançar pela sala e encenar teatrinhos divertidos.",
+        "Adora brincar ao ar livre na grama, correr com o pet e andar de bicicleta."
+      ];
+
+    case "specialMention":
+      return [
+        "Lembrar que o vovô e a vovó mandam um abraço bem apertado e cheio de orgulho.",
+        "Elogiar a bravura e a calma que mostrou durante a visita ao médico ou dentista.",
+        "Mencionar o amor incondicional e o carinho com que cuida dos animais da casa.",
+        "Dizer que os duendes do Polo Norte viram como ela foi generosa com os colegas."
+      ];
+
+    case "giftRequest":
+      if (numAge <= 4) {
+        return [
+          "Um trenzinho de madeira com trilhos e bloquinhos coloridos para montar.",
+          "Um livro interativo com sons de animais e ilustrações mágicas.",
+          "Um bichinho de pelúcia fofinho para ser companheiro de soninhos tranquilos.",
+          "Um kit lúdico de massinhas de modelar com forminhas divertidas."
+        ];
+      } else if (numAge <= 8) {
+        return [
+          "Uma bicicleta com capacete para viver grandes aventuras pelo parque!",
+          "Um kit completo de pintura e artes com aquarelas, telas e pincéis.",
+          "Um robô interativo inteligente ou jogo de tabuleiro para brincar em família.",
+          "Um conjunto incrível de blocos de montar para construir naves e castelos."
+        ];
+      } else {
+        return [
+          "Um jogo de tabuleiro estratégico para reunir a família toda nas noites de Natal.",
+          "Um kit de experimentos científicos ou robótica para explorar invenções.",
+          "Um telescópio ou binóculo para observar as estrelas e constelações no céu.",
+          "Um patinete esportivo veloz com kit completo de joelheiras e capacete."
+        ];
+      }
+
+    case "parentNotes":
+      return [
+        "Lembrar com amor de continuar dormindo no próprio quartinho a noite toda com coragem.",
+        "Reforçar que os pais têm um orgulho imenso de seu coração bondoso e alegre.",
+        "Incentivar a continuar experimentando legumes e verduras para crescer forte e saudável.",
+        "Lembrar que errar faz parte do aprendizado e que tentar de novo é sinal de sabedoria."
+      ];
+
+    default:
+      return [
+        "Uma atitude cheia de generosidade e empatia com as pessoas ao redor.",
+        "Uma conquista diária feita com persistência, curiosidade e bom humor.",
+        "Um momento inesquecível em família com gargalhadas e muito carinho.",
+        "Um passo importante de crescimento e amadurecimento com amor."
+      ];
+  }
+}
+
+app.post("/api/elf-suggestions", async (req, res) => {
+  try {
+    const { field, childName = "", age, city = "" } = req.body;
+    const ai = getGeminiClient();
+
+    let suggestions: string[] = [];
+
+    if (ai) {
+      try {
+        const fieldDescriptions: Record<string, string> = {
+          achievements: "boas ações, conquistas ou atitudes nobres e carinhosas da criança no ano",
+          learningMilestone: "aprendizados marcantes, habilidades novas e superações",
+          favoriteActivity: "brincadeiras, atividades e hobbies favoritos da criança",
+          specialMention: "recado especial ou detalhe carinhoso que o Papai Noel deve citar",
+          giftRequest: "ideias realistas e lúdicas de pedidos de presentes de Natal para a criança",
+          parentNotes: "conselho amoroso, hábito a incentivar ou palavra de carinho dos pais"
+        };
+
+        const targetField = fieldDescriptions[field] || "ideia mágica para carta de Natal";
+        const childAgeStr = age ? `de ${age} anos` : "criança";
+        const childNameStr = childName ? `chamada ${childName}` : "";
+
+        const prompt = `Você é o Elfo Artesão da Fábrica do Papai Noel no Polo Norte.
+Sua missão é sugerir exatamente 4 opções criativas, afetuosas, autênticas e inspiradoras em português brasileiro para preencher o campo: ${targetField}.
+Perfil da criança: ${childNameStr} ${childAgeStr}.
+Cada sugestão deve ser uma frase concisa (de 6 a 18 palavras), pronta para ser inserida diretamente no formulário pelos pais.
+Retorne APENAS um array JSON de strings no formato:
+["sugestão 1", "sugestão 2", "sugestão 3", "sugestão 4"]`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.85,
+          },
+        });
+
+        if (response && response.text) {
+          const parsed = JSON.parse(response.text.trim());
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            suggestions = parsed.slice(0, 4).map((s) => String(s).trim());
+          }
+        }
+      } catch (err: any) {
+        console.warn("Gemini elf suggestions call failed, falling back to curated suggestions:", err?.message || err);
+      }
+    }
+
+    if (!suggestions || suggestions.length === 0) {
+      suggestions = getFallbackElfSuggestions(field, childName, typeof age === "number" ? age : undefined);
+    }
+
+    res.json({
+      success: true,
+      field,
+      suggestions,
+    });
+  } catch (error: any) {
+    console.error("Error in /api/elf-suggestions:", error);
+    res.status(500).json({ error: "Erro ao gerar sugestões do elfo." });
+  }
+});
+
 // 5. Admin SaaS Metrics Route
 app.get("/api/admin/metrics", (_req, res) => {
   const totalLetters = inMemoryLetters.length;
@@ -874,6 +1097,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   phone TEXT,
   role TEXT DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+  asaas_customer_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -924,15 +1148,54 @@ CREATE TABLE IF NOT EXISTS public.shipping_addresses (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  status TEXT DEFAULT 'pending',
+  billing_type TEXT NOT NULL,
+  asaas_customer_id TEXT,
+  asaas_payment_id TEXT,
+  invoice_url TEXT,
+  bank_slip_url TEXT,
+  pix_qr_code TEXT,
+  pix_copy_paste TEXT,
+  due_date TEXT,
+  paid_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id TEXT UNIQUE NOT NULL,
+  event_type TEXT NOT NULL,
+  payment_id TEXT,
+  payload JSONB NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processed', 'failed')),
+  processed_at TIMESTAMPTZ,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Row Level Security (RLS)
 ALTER TABLE public.experiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can manage own experiences" ON public.experiences
   FOR ALL USING (auth.uid() = user_id);
 
 CREATE POLICY "Public token access for children page" ON public.experiences
   FOR SELECT USING (true);
+
+CREATE POLICY "Users can view own orders" ON public.orders
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own payments" ON public.payments
+  FOR SELECT USING (auth.uid() = user_id);
   `;
   res.setHeader("Content-Type", "text/plain");
   res.send(schemaSql);
@@ -950,6 +1213,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   phone TEXT,
   role TEXT DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+  asaas_customer_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -986,8 +1250,41 @@ CREATE TABLE IF NOT EXISTS public.orders (
   paid_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS public.payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  status TEXT DEFAULT 'pending',
+  billing_type TEXT NOT NULL,
+  asaas_customer_id TEXT,
+  asaas_payment_id TEXT,
+  invoice_url TEXT,
+  bank_slip_url TEXT,
+  pix_qr_code TEXT,
+  pix_copy_paste TEXT,
+  due_date TEXT,
+  paid_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id TEXT UNIQUE NOT NULL,
+  event_type TEXT NOT NULL,
+  payment_id TEXT,
+  payload JSONB NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processed', 'failed')),
+  processed_at TIMESTAMPTZ,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 ALTER TABLE public.experiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 `;
   res.json({ schema: schemaSql });
 });

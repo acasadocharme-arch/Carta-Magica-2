@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAdminMetricsAPI, fetchLettersAPI } from "../services/api";
+import { getAdminMetricsAPI, fetchLettersAPI, ASAAS_CHECKOUT_URL } from "../services/api";
 import { AdminMetrics, Letter } from "../types";
 import { 
   BarChart3, 
@@ -13,7 +13,12 @@ import {
   RefreshCw,
   CheckCircle2,
   Clock,
-  Code
+  Code,
+  Gauge,
+  Sparkles,
+  ShieldCheck,
+  Copy,
+  Check
 } from "lucide-react";
 
 interface AdminPanelProps {
@@ -27,6 +32,25 @@ export default function AdminPanel({ onBack, onViewLetter }: AdminPanelProps) {
   const [loading, setLoading] = useState(true);
   const [showSqlBlueprint, setShowSqlBlueprint] = useState(false);
   const [sqlBlueprint, setSqlBlueprint] = useState<string>("");
+  const [copiedAsaasLink, setCopiedAsaasLink] = useState(false);
+
+  // Sleigh speed state in seconds
+  const [sleighSpeed, setSleighSpeed] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("santa_sleigh_speed");
+      if (saved) {
+        const val = Number(saved);
+        if (!isNaN(val) && val >= 6 && val <= 60) return val;
+      }
+    }
+    return 26;
+  });
+
+  const handleSpeedChange = (newSpeed: number) => {
+    setSleighSpeed(newSpeed);
+    localStorage.setItem("santa_sleigh_speed", String(newSpeed));
+    window.dispatchEvent(new CustomEvent("sleigh-speed-change", { detail: { speed: newSpeed } }));
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -157,6 +181,133 @@ export default function AdminPanel({ onBack, onViewLetter }: AdminPanelProps) {
 
         </div>
       )}
+
+      {/* Sleigh Flight Speed Controller Card */}
+      <div className="bg-[#0B132B] border border-[#FFD166]/20 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#D90429]/20 border border-[#D90429]/50 flex items-center justify-center text-[#FFD166]">
+              <Gauge className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-cinzel text-lg font-bold text-white flex items-center gap-2">
+                <span>Velocidade de Voo do Trenó do Papai Noel</span>
+                <span className="text-[11px] font-sans font-semibold bg-[#1C2541] text-[#FFD166] px-2.5 py-0.5 rounded-full border border-white/10">
+                  Tela Inicial
+                </span>
+              </h3>
+              <p className="text-xs text-[#EDF2F4]/70">
+                Ajuste deslizante para regular a velocidade com que o trenó e as renas cruzam o céu noturno da aplicação.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="bg-[#1C2541] border border-white/10 px-3.5 py-1.5 rounded-xl flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#FFD166] animate-pulse" />
+              <span className="text-xs text-white font-bold font-mono">
+                {sleighSpeed}s de travessia
+              </span>
+              <span className="text-[10px] text-[#FFD166] font-medium hidden sm:inline">
+                ({sleighSpeed <= 14 ? "⚡ Rápido" : sleighSpeed <= 28 ? "✨ Equilibrado" : "🌙 Suave"})
+              </span>
+            </div>
+
+            {sleighSpeed !== 26 && (
+              <button
+                onClick={() => handleSpeedChange(26)}
+                className="text-xs text-[#EDF2F4]/60 hover:text-white underline cursor-pointer"
+                title="Voltar ao tempo padrão de 26 segundos"
+              >
+                Restaurar Padrão
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Range Slider */}
+        <div className="space-y-2 pt-2">
+          <input
+            type="range"
+            min="8"
+            max="45"
+            step="1"
+            value={sleighSpeed}
+            onChange={(e) => handleSpeedChange(Number(e.target.value))}
+            className="w-full h-2 bg-[#1C2541] rounded-lg appearance-none cursor-pointer accent-[#EF233C]"
+            id="admin-sleigh-speed-slider"
+            aria-label="Ajustar velocidade de voo do trenó"
+          />
+          <div className="flex justify-between text-[11px] text-[#EDF2F4]/50 px-1 font-mono">
+            <span>8s (Mais Rápido)</span>
+            <span className="text-[#FFD166]">26s (Padrão Recomendado)</span>
+            <span>45s (Voo Suave & Contemplativo)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Asaas Payment Gateway Status Card */}
+      <div className="bg-[#0B132B] border border-emerald-500/30 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-cinzel text-lg font-bold text-white">
+                  Gateway de Pagamento Asaas
+                </h3>
+                <span className="inline-flex items-center gap-1 bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Ativo & Conectado
+                </span>
+              </div>
+              <p className="text-xs text-[#EDF2F4]/70">
+                Cobrança oficial com suporte a Pix Instantâneo e Cartão de Crédito.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(ASAAS_CHECKOUT_URL);
+                setCopiedAsaasLink(true);
+                setTimeout(() => setCopiedAsaasLink(false), 2500);
+              }}
+              className="bg-[#1C2541] hover:bg-[#2A385B] text-white border border-white/10 text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              {copiedAsaasLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-300">Link Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copiar Link Asaas</span>
+                </>
+              )}
+            </button>
+
+            <a
+              href={ASAAS_CHECKOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            >
+              <span>Abrir Página Asaas</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        <div className="bg-[#060B19] rounded-2xl p-3 border border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <span className="text-[#EDF2F4]/60">URL do Checkout Asaas:</span>
+          <span className="text-[#FFD166] break-all">{ASAAS_CHECKOUT_URL}</span>
+        </div>
+      </div>
 
       {/* Orders Table */}
       <div className="bg-[#0B132B] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">

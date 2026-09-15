@@ -95,7 +95,7 @@ export default function PaywallModal({
 
         <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-[#EDF2F4]/60">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Checkout criptografado 256-bit • Liberação imediata</span>
+          <span>Checkout Seguro Asaas • Pix ou Cartão com Liberação Imediata</span>
         </div>
 
         <button

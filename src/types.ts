@@ -56,8 +56,14 @@ export type AnalyticsEvent =
   | "audio_played"
   | "video_started"
   | "pdf_downloaded"
+  | "pdf_generation_started"
+  | "png_downloaded"
+  | "png_generation_started"
+  | "candy_game_started"
+  | "candy_game_toggled"
   | "whatsapp_shared"
   | "link_copied"
+  | "photo_uploaded"
   | "new_letter_from_shared_page";
 
 export interface Order {

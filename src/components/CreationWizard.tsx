@@ -15,8 +15,16 @@ import {
   Gift, 
   Clock, 
   Info,
-  Upload
+  Upload,
+  Trash2,
+  RefreshCw,
+  AlertCircle,
+  Lock,
+  FileImage,
+  Loader2
 } from "lucide-react";
+import ElfHelperButton from "./ElfHelperButton";
+import { processAndSanitizeChildPhoto, PHOTO_GUIDELINES } from "../utils/imageProcessing";
 
 interface CreationWizardProps {
   initialPlan?: PlanType;
@@ -37,6 +45,17 @@ export default function CreationWizard({
   const [age, setAge] = useState<number | "">("");
   const [city, setCity] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [photoStats, setPhotoStats] = useState<{
+    width?: number;
+    height?: number;
+    originalSize?: number;
+    compressedSize?: number;
+  } | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [photoConsent, setPhotoConsent] = useState(true);
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   // Step 2
   const [achievements, setAchievements] = useState("");
@@ -80,28 +99,102 @@ export default function CreationWizard({
     return () => clearInterval(interval);
   }, [isGenerating]);
 
-  // Handle image upload mock / base64 preview
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  // Process file with privacy sanitization (EXIF/GPS removal & auto-compression)
+  const processUploadedFile = async (file: File) => {
+    setPhotoError(null);
+    setIsProcessingPhoto(true);
+
+    try {
+      const result = await processAndSanitizeChildPhoto(file);
+      if (result.success && result.dataUrl) {
+        setPhotoUrl(result.dataUrl);
+        setPhotoStats({
+          width: result.width,
+          height: result.height,
+          originalSize: result.originalSize,
+          compressedSize: result.compressedSize,
+        });
+        setPhotoConsent(true);
+        trackEvent("photo_uploaded", {
+          originalSize: result.originalSize,
+          compressedSize: result.compressedSize,
+          plan: selectedPlan,
+        } as any);
+      } else {
+        setPhotoError(result.error || "Não foi possível processar a foto. Tente outra imagem.");
+      }
+    } catch (err: any) {
+      setPhotoError("Erro inesperado ao processar a foto: " + (err?.message || "Tente novamente"));
+    } finally {
+      setIsProcessingPhoto(false);
     }
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+    // Reset input value so re-selecting same file triggers onChange
+    e.target.value = "";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl("");
+    setPhotoStats(null);
+    setPhotoError(null);
+  };
+
+  // Format bytes helper for human-readable display
+  const formatBytes = (bytes?: number) => {
+    if (!bytes) return "0 KB";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   // Validation
-  const canProceedStep1 = childName.trim().length > 0 && age !== "" && city.trim().length > 0;
+  const canProceedStep1 = 
+    childName.trim().length > 0 && 
+    age !== "" && 
+    city.trim().length > 0 && 
+    (!photoUrl || photoConsent);
   const canProceedStep2 = true; // optional but recommended
   const canProceedStep3 = giftRequest.trim().length > 0;
   const canSubmit = confirmedGuardian && canProceedStep1;
 
   const handleNext = () => {
-    if (currentStep === 1 && !canProceedStep1) {
-      alert("Por favor, preencha o nome, a idade e a cidade da criança.");
-      return;
+    if (currentStep === 1) {
+      if (!childName.trim() || age === "" || !city.trim()) {
+        alert("Por favor, preencha o nome, a idade e a cidade da criança.");
+        return;
+      }
+      if (photoUrl && !photoConsent) {
+        alert("Por favor, confirme a autorização do responsável para o uso seguro da foto da criança.");
+        return;
+      }
     }
     if (currentStep === 3 && !canProceedStep3) {
       alert("Por favor, informe o pedido ou presente de Natal.");
@@ -330,35 +423,227 @@ export default function CreationWizard({
               </div>
             </div>
 
-            {/* Optional Photo Upload */}
-            <div className="pt-2 border-t border-white/10">
-              <label className="block text-xs font-semibold text-[#FFD166] mb-1.5 flex items-center gap-1.5">
-                <Camera className="w-3.5 h-3.5" />
-                <span>Foto da Criança (Opcional — ilustra a página de abertura)</span>
-              </label>
-              <div className="flex items-center gap-4">
-                {photoUrl ? (
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#FFD166] shrink-0">
-                    <img src={photoUrl} alt="Preview da criança" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => setPhotoUrl("")}
-                      className="absolute inset-0 bg-black/60 text-white text-[10px] flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                ) : (
-                  <label className="cursor-pointer border-2 border-dashed border-white/20 hover:border-[#FFD166]/50 rounded-xl px-4 py-3 flex items-center gap-2 text-xs text-[#EDF2F4]/70 hover:text-white transition-colors bg-[#060B19]/60">
-                    <Upload className="w-4 h-4 text-[#FFD166]" />
-                    <span>Escolher foto do celular ou computador</span>
-                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                  </label>
-                )}
-                <span className="text-[11px] text-[#EDF2F4]/50 leading-tight">
-                  Protegido: a foto fica armazenada apenas para visualização da sua família.
-                </span>
+            {/* Sistema Seguro de Upload de Foto com Diretrizes e Privacidade Infantil */}
+            <div className="pt-3 border-t border-white/10 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-[#FFD166] flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-[#FFD166]" />
+                  <span>Foto da Criança (Opcional — ilustra a carta e a experiência)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowGuidelines((prev) => !prev)}
+                  className="text-[11px] text-[#FFD166]/80 hover:text-[#FFD166] underline flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Info className="w-3 h-3" />
+                  <span>{showGuidelines ? "Ocultar diretrizes" : "Ver diretrizes & privacidade"}</span>
+                </button>
               </div>
+
+              {/* Guidelines Box */}
+              {showGuidelines && (
+                <div className="bg-[#060B19]/90 border border-[#FFD166]/30 rounded-2xl p-4 text-xs text-[#EDF2F4]/80 space-y-2.5 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 text-[#FFD166] font-bold text-xs">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Diretrizes de Envio & Proteção de Dados Infantis (LGPD / COPPA)</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                    <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                      <strong className="text-white block mb-0.5">📐 Formato e Tamanho:</strong>
+                      <span>JPG, PNG ou WebP de até 10 MB. O sistema otimiza e comprime a foto automaticamente para garantir carregamento instantâneo.</span>
+                    </div>
+                    <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                      <strong className="text-white block mb-0.5">✨ Enquadramento Ideal:</strong>
+                      <span>Fotos frontais, bem iluminadas e com o rosto ou meio corpo da criança garantem o melhor resultado estético na carta e no PDF.</span>
+                    </div>
+                    <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                      <strong className="text-white block mb-0.5">🔒 Remoção de Metadados (EXIF/GPS):</strong>
+                      <span>Para proteger a privacidade da criança, qualquer coordenada GPS ou dado do aparelho é sanitizado localmente no seu navegador antes do envio.</span>
+                    </div>
+                    <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                      <strong className="text-white block mb-0.5">⭐ Integração no Plano PRO:</strong>
+                      <span>No Plano PRO, a foto ganha moldura dourada na carta digital, é impressa no PDF oficial A4 e integrada à cena do vídeo do Polo Norte.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {photoError && (
+                <div className="bg-red-950/60 border border-red-500/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-red-200 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold">{photoError}</p>
+                    <p className="text-[11px] text-red-300/80 mt-0.5">
+                      Formatos aceitos: JPG, PNG ou WebP com até 10 MB.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoError(null)}
+                    className="text-red-400 hover:text-white text-xs font-bold px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Upload Dropzone / Preview */}
+              {!photoUrl ? (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer relative bg-[#060B19]/50 ${
+                    isDragging
+                      ? "border-[#FFD166] bg-[#FFD166]/10 shadow-[0_0_15px_rgba(255,209,102,0.2)]"
+                      : "border-white/20 hover:border-[#FFD166]/60 hover:bg-[#060B19]/80"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    id="child-photo-input"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    onChange={handlePhotoUpload}
+                    disabled={isProcessingPhoto}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+
+                  {isProcessingPhoto ? (
+                    <div className="py-3 flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="w-8 h-8 text-[#FFD166] animate-spin" />
+                      <p className="text-xs font-semibold text-white">
+                        Sanitizando foto e removendo dados de localização (GPS)...
+                      </p>
+                      <p className="text-[11px] text-[#EDF2F4]/60">
+                        Otimizando imagem para alta resolução com máxima segurança
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="py-2 flex flex-col items-center justify-center gap-2.5">
+                      <div className="w-12 h-12 rounded-2xl bg-[#1C2541] border border-[#FFD166]/30 text-[#FFD166] flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                        <Upload className="w-6 h-6 text-[#FFD166]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">
+                          Clique para escolher ou arraste a foto aqui
+                        </p>
+                        <p className="text-xs text-[#EDF2F4]/60 mt-0.5">
+                          JPG, PNG ou WebP • Até 10 MB • Otimização automática e segura
+                        </p>
+                      </div>
+                      <div className="inline-flex items-center gap-1.5 text-[11px] text-[#FFD166]/80 bg-[#1C2541]/60 px-3 py-1 rounded-full border border-white/10">
+                        <Lock className="w-3 h-3 text-[#FFD166]" />
+                        <span>Protegido por privacidade infantil • Metadados GPS eliminados</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Card com a Foto Carregada e Otimizada */
+                <div className="bg-[#060B19]/80 border-2 border-[#FFD166]/50 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                    {/* Polaroid Vintage Frame Preview */}
+                    <div className="relative shrink-0 bg-[#FFFDF9] p-2 rounded-xl shadow-md border-2 border-[#FFD166] transform -rotate-1">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden border border-[#C49A45]/30 relative bg-neutral-100">
+                        <img
+                          src={photoUrl}
+                          alt="Retrato da criança"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-1 right-1 bg-[#D90429] text-[#FFD166] text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-[#FFD166] shadow">
+                          POLO NORTE
+                        </div>
+                      </div>
+                      <div className="text-center mt-1.5">
+                        <span className="text-[10px] font-serif font-bold text-[#1C2541] block truncate max-w-[96px] sm:max-w-[112px]">
+                          {childName || "Criança Especial"}
+                        </span>
+                        <span className="text-[8px] font-mono text-[#9B021A] block uppercase">
+                          Retrato Oficial
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Detalhes e Status de Sanitização */}
+                    <div className="flex-1 text-center sm:text-left space-y-2">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Foto Pronta & Sanitizada</span>
+                        </span>
+                        <span className="bg-[#1C2541] text-[#FFD166] text-[10px] font-mono px-2 py-0.5 rounded border border-white/10">
+                          GPS/EXIF Removidos
+                        </span>
+                      </div>
+
+                      <h4 className="font-cinzel text-sm font-bold text-white">
+                        Retrato preparado para a Carta do Papai Noel
+                      </h4>
+
+                      {photoStats && (
+                        <p className="text-[11px] text-[#EDF2F4]/70">
+                          Tamanho reduzido de {formatBytes(photoStats.originalSize)} para{" "}
+                          <strong className="text-white">{formatBytes(photoStats.compressedSize)}</strong>{" "}
+                          ({photoStats.width}x{photoStats.height}px) para carregamento instantâneo.
+                        </p>
+                      )}
+
+                      <p className="text-[11px] text-[#FFD166]/90">
+                        {selectedPlan === "pro"
+                          ? "⭐ No Plano PRO: esta foto será emoldurada com selo dourado na carta digital, no PDF A4 oficial para impressão e no estúdio de vídeo!"
+                          : "🎁 Dica: no Plano PRO, a foto da criança recebe moldura oficial dourada para impressão do PDF e na mensagem de vídeo."}
+                      </p>
+
+                      {/* Botões de Ação */}
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                        <label className="bg-[#1C2541] hover:bg-[#2A385B] text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/20 hover:border-[#FFD166] flex items-center gap-1.5 cursor-pointer transition-colors">
+                          <RefreshCw className="w-3 h-3 text-[#FFD166]" />
+                          <span>Trocar foto</span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            onChange={handlePhotoUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-950/40 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-500/30 flex items-center gap-1.5 cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Remover</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Termo de Consentimento do Responsável (LGPD Art. 14 / Proteção Infantil) */}
+                  <div className="pt-3 border-t border-white/10">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={photoConsent}
+                        onChange={(e) => setPhotoConsent(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-white/30 text-[#D90429] focus:ring-[#FFD166] accent-[#D90429] cursor-pointer"
+                        id="photo-guardian-consent-checkbox"
+                      />
+                      <span className="text-[11px] text-[#EDF2F4]/80 leading-relaxed">
+                        Declaro ser pai, mãe ou responsável legal por{" "}
+                        <strong className="text-[#FFD166]">{childName || "esta criança"}</strong> e autorizo
+                        o uso desta foto estritamente para a personalização da carta, PDF e vídeo do Polo Norte,
+                        ciente de que a foto permanece sob controle exclusivo da minha família (Art. 14 da LGPD).
+                      </span>
+                    </label>
+                    {!photoConsent && (
+                      <p className="text-[10px] text-amber-400 font-semibold mt-1 pl-6">
+                        ⚠️ A confirmação do responsável é necessária para prosseguir com a foto da criança.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -379,9 +664,20 @@ export default function CreationWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90 mb-1">
-                O que ela fez de especial este ano?
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90">
+                  O que ela fez de especial este ano?
+                </label>
+                <ElfHelperButton
+                  fieldName="achievements"
+                  fieldLabel="Conquistas e Boas Ações"
+                  childName={childName}
+                  age={typeof age === "number" ? age : undefined}
+                  city={city}
+                  currentValue={achievements}
+                  onSelectSuggestion={(suggestion) => setAchievements(suggestion)}
+                />
+              </div>
               <textarea
                 rows={2}
                 value={achievements}
@@ -393,9 +689,20 @@ export default function CreationWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90 mb-1">
-                O que ela aprendeu de marcante?
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90">
+                  O que ela aprendeu de marcante?
+                </label>
+                <ElfHelperButton
+                  fieldName="learningMilestone"
+                  fieldLabel="Aprendizado Marcante"
+                  childName={childName}
+                  age={typeof age === "number" ? age : undefined}
+                  city={city}
+                  currentValue={learningMilestone}
+                  onSelectSuggestion={(suggestion) => setLearningMilestone(suggestion)}
+                />
+              </div>
               <input
                 type="text"
                 value={learningMilestone}
@@ -406,9 +713,20 @@ export default function CreationWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90 mb-1">
-                Do que ela mais gosta?
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90">
+                  Do que ela mais gosta?
+                </label>
+                <ElfHelperButton
+                  fieldName="favoriteActivity"
+                  fieldLabel="Atividades Favoritas"
+                  childName={childName}
+                  age={typeof age === "number" ? age : undefined}
+                  city={city}
+                  currentValue={favoriteActivity}
+                  onSelectSuggestion={(suggestion) => setFavoriteActivity(suggestion)}
+                />
+              </div>
               <input
                 type="text"
                 value={favoriteActivity}
@@ -419,9 +737,20 @@ export default function CreationWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90 mb-1">
-                Existe algo em especial que você gostaria que o Papai Noel mencionasse?
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90">
+                  Existe algo em especial que você gostaria que o Papai Noel mencionasse?
+                </label>
+                <ElfHelperButton
+                  fieldName="specialMention"
+                  fieldLabel="Menção Especial"
+                  childName={childName}
+                  age={typeof age === "number" ? age : undefined}
+                  city={city}
+                  currentValue={specialMention}
+                  onSelectSuggestion={(suggestion) => setSpecialMention(suggestion)}
+                />
+              </div>
               <input
                 type="text"
                 value={specialMention}
@@ -449,9 +778,20 @@ export default function CreationWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90 mb-1.5">
-                O que ela pediu de presente? *
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90">
+                  O que ela pediu de presente? *
+                </label>
+                <ElfHelperButton
+                  fieldName="giftRequest"
+                  fieldLabel="Pedido de Presente"
+                  childName={childName}
+                  age={typeof age === "number" ? age : undefined}
+                  city={city}
+                  currentValue={giftRequest}
+                  onSelectSuggestion={(suggestion) => setGiftRequest(suggestion)}
+                />
+              </div>
               <input
                 type="text"
                 required
@@ -488,9 +828,20 @@ export default function CreationWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90 mb-1.5">
-                Recado confidencial dos responsáveis (Opcional)
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-[#EDF2F4]/90">
+                  Recado confidencial dos responsáveis (Opcional)
+                </label>
+                <ElfHelperButton
+                  fieldName="parentNotes"
+                  fieldLabel="Recado dos Pais"
+                  childName={childName}
+                  age={typeof age === "number" ? age : undefined}
+                  city={city}
+                  currentValue={parentNotes}
+                  onSelectSuggestion={(suggestion) => setParentNotes(suggestion)}
+                />
+              </div>
               <textarea
                 rows={4}
                 value={parentNotes}

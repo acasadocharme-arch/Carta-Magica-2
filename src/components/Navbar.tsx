@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { UserProfile } from "../types";
+import { MenuTab } from "./MenuInfoModal";
 import { 
   Sparkles, 
   Menu, 
@@ -21,6 +22,8 @@ interface NavbarProps {
   onOpenLogistics: () => void;
   onOpenAdmin?: () => void;
   currentView?: string;
+  onOpenMenuInfo?: (tab: MenuTab) => void;
+  onNavigateHome?: () => void;
 }
 
 export default function Navbar({
@@ -32,17 +35,25 @@ export default function Navbar({
   onOpenLogistics,
   onOpenAdmin,
   currentView = "landing",
+  onOpenMenuInfo,
+  onNavigateHome,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleNavClick = (view: string, sectionId?: string) => {
+  const handleHomeClick = () => {
     setMobileMenuOpen(false);
-    onNavigate(view);
-    if (sectionId) {
-      setTimeout(() => {
-        const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+    if (onNavigateHome) {
+      onNavigateHome();
+    } else {
+      onNavigate("landing");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleTabClick = (tab: MenuTab) => {
+    setMobileMenuOpen(false);
+    if (onOpenMenuInfo) {
+      onOpenMenuInfo(tab);
     }
   };
 
@@ -52,8 +63,8 @@ export default function Navbar({
         
         {/* Logo */}
         <button
-          onClick={() => handleNavClick("landing")}
-          className="flex items-center space-x-3 text-left group"
+          onClick={handleHomeClick}
+          className="flex items-center space-x-3 text-left group cursor-pointer"
           id="navbar-logo-btn"
         >
           <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#D90429] to-[#780016] flex items-center justify-center shadow-lg border border-[#FFD166]/60 group-hover:scale-105 transition-transform">
@@ -72,38 +83,38 @@ export default function Navbar({
         {/* Desktop Links */}
         <div className="hidden lg:flex items-center space-x-7 text-sm font-medium text-[#EDF2F4]/80">
           <button
-            onClick={() => handleNavClick("landing")}
+            onClick={handleHomeClick}
             className="hover:text-[#FFD166] transition-colors py-1 cursor-pointer"
           >
             Início
           </button>
           <button
-            onClick={() => handleNavClick("landing", "como-funciona")}
+            onClick={() => handleTabClick("como-funciona")}
             className="hover:text-[#FFD166] transition-colors py-1 cursor-pointer"
           >
             Como Funciona
           </button>
           <button
-            onClick={() => handleNavClick("landing", "amostra")}
+            onClick={() => handleTabClick("exemplo")}
             className="hover:text-[#FFD166] transition-colors py-1 cursor-pointer"
           >
             Exemplo
           </button>
           <button
-            onClick={() => handleNavClick("landing", "planos")}
+            onClick={() => handleTabClick("planos")}
             className="hover:text-[#FFD166] transition-colors py-1 cursor-pointer"
           >
             Planos
           </button>
           <button
-            onClick={onOpenLogistics}
+            onClick={() => handleTabClick("rastreio")}
             className="hover:text-[#FFD166] transition-colors py-1 cursor-pointer flex items-center gap-1.5"
           >
             <Truck className="w-4 h-4 text-[#FFD166]" />
             <span>Rastreio Postal</span>
           </button>
           <button
-            onClick={() => handleNavClick("landing", "faq")}
+            onClick={() => handleTabClick("faq")}
             className="hover:text-[#FFD166] transition-colors py-1 cursor-pointer"
           >
             Dúvidas
@@ -194,42 +205,39 @@ export default function Navbar({
         <div className="lg:hidden bg-[#0B132B] border-b border-[#FFD166]/20 px-4 pt-3 pb-6 space-y-3 animate-in fade-in slide-in-from-top-4 duration-200">
           <div className="grid grid-cols-2 gap-2 text-sm text-[#EDF2F4]/90 pb-3 border-b border-white/10 font-medium">
             <button
-              onClick={() => handleNavClick("landing")}
-              className="text-left py-2 px-3 rounded-lg hover:bg-white/5"
+              onClick={handleHomeClick}
+              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 cursor-pointer"
             >
               Início
             </button>
             <button
-              onClick={() => handleNavClick("landing", "como-funciona")}
-              className="text-left py-2 px-3 rounded-lg hover:bg-white/5"
+              onClick={() => handleTabClick("como-funciona")}
+              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 cursor-pointer"
             >
               Como Funciona
             </button>
             <button
-              onClick={() => handleNavClick("landing", "amostra")}
-              className="text-left py-2 px-3 rounded-lg hover:bg-white/5"
+              onClick={() => handleTabClick("exemplo")}
+              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 cursor-pointer"
             >
               Ver Exemplo
             </button>
             <button
-              onClick={() => handleNavClick("landing", "planos")}
-              className="text-left py-2 px-3 rounded-lg hover:bg-white/5"
+              onClick={() => handleTabClick("planos")}
+              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 cursor-pointer"
             >
               Planos & Preços
             </button>
             <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenLogistics();
-              }}
-              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 flex items-center gap-1 text-[#FFD166]"
+              onClick={() => handleTabClick("rastreio")}
+              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 flex items-center gap-1 text-[#FFD166] cursor-pointer"
             >
               <Truck className="w-3.5 h-3.5" />
               <span>Rastreio Postal</span>
             </button>
             <button
-              onClick={() => handleNavClick("landing", "faq")}
-              className="text-left py-2 px-3 rounded-lg hover:bg-white/5"
+              onClick={() => handleTabClick("faq")}
+              className="text-left py-2 px-3 rounded-lg hover:bg-white/5 cursor-pointer"
             >
               Dúvidas FAQ
             </button>

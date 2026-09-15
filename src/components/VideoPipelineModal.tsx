@@ -7,6 +7,8 @@ interface VideoPipelineModalProps {
   onClose: () => void;
   childName: string;
   letterId: string;
+  photoUrl?: string;
+  plan?: string;
 }
 
 export default function VideoPipelineModal({
@@ -14,6 +16,8 @@ export default function VideoPipelineModal({
   onClose,
   childName,
   letterId,
+  photoUrl,
+  plan,
 }: VideoPipelineModalProps) {
   if (!isOpen) return null;
 
@@ -43,9 +47,35 @@ export default function VideoPipelineModal({
           🎬 O Papai Noel preparou um vídeo especialmente para você!
         </h3>
 
-        <p className="text-xs sm:text-sm text-[#EDF2F4]/75 mb-6">
+        <p className="text-xs sm:text-sm text-[#EDF2F4]/75 mb-4">
           A mensagem em vídeo personalizada para <strong>{childName}</strong> está sendo orquestrada pela equipe do Polo Norte.
         </p>
+
+        {/* Child Photo Staging in Video Scene (when present) */}
+        {photoUrl && (
+          <div className="bg-[#060B19]/90 border border-[#FFD166]/40 rounded-2xl p-3 mb-5 flex items-center gap-3 text-left">
+            <div className="relative shrink-0 bg-[#FFFDF9] p-1 rounded-lg border border-[#C49A45] shadow-sm transform -rotate-2">
+              <div className="w-12 h-12 rounded overflow-hidden">
+                <img
+                  src={photoUrl}
+                  alt={childName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+            <div className="flex-1">
+              <span className="text-[10px] font-mono text-[#FFD166] font-bold uppercase block">
+                Cenário Personalizado Ativo
+              </span>
+              <p className="text-xs text-white font-semibold">
+                Retrato de {childName} no porta-retrato do Papai Noel
+              </p>
+              <p className="text-[11px] text-[#EDF2F4]/60">
+                A foto enviada está posicionada sobre a bancada natalina na gravação.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Visual Real States of Processing */}
         <div className="bg-[#060B19]/80 border border-white/10 rounded-2xl p-4 sm:p-5 text-left space-y-3.5 mb-6">
@@ -74,7 +104,9 @@ export default function VideoPipelineModal({
                 2. Criando seu vídeo mágico...
               </div>
               <p className="text-[11px] text-[#EDF2F4]/70">
-                Renderização de iluminação natalina, lareira e sincronização labial no estúdio do Polo Norte.
+                {photoUrl
+                  ? `Renderização de iluminação natalina, lareira e sincronização do retrato de ${childName} no cenário.`
+                  : "Renderização de iluminação natalina, lareira e sincronização labial no estúdio do Polo Norte."}
               </p>
             </div>
           </div>
