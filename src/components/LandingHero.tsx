@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Sparkles, ArrowRight, ShieldCheck, Heart, Volume2, Stamp } from "lucide-react";
-import { motion } from "motion/react";
 import ChristmasCountdown from "./ChristmasCountdown";
-import santaHeroImg from "../assets/images/santa_hero_transparent.png";
+import HeroSantaFlight from "./HeroSantaFlight";
 
 interface LandingHeroProps {
   onStartWizard: (plan?: "free" | "pro") => void;
@@ -18,16 +17,13 @@ export default function LandingHero({
   const [envelopeOpen, setEnvelopeOpen] = useState(false);
 
   return (
-    <section className="relative pt-6 pb-16 md:pt-12 md:pb-24 px-4 sm:px-6 lg:px-8 w-full overflow-hidden">
-      
+    <section className="relative pt-6 pb-16 md:pt-12 md:pb-24 px-4 sm:px-6 lg:px-8 w-full overflow-hidden" id="hero-section">
       {/* Background radial glow - strictly bounded to prevent horizontal expansion */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-[650px] h-[360px] bg-radial from-[#D90429]/15 via-[#FFD166]/10 to-transparent blur-3xl pointer-events-none -z-10" />
 
       <div className="max-w-6xl xl:max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 xl:gap-12 items-center">
-        
         {/* Left Column: Emotional Copy & CTAs */}
         <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-center lg:text-left z-20">
-          
           {/* Subtle Tag */}
           <div className="inline-flex items-center gap-2 bg-[#0B132B]/90 border border-[#FFD166]/40 rounded-full px-4 py-1.5 text-xs text-[#FFD166] shadow-md mx-auto lg:mx-0">
             <span className="flex h-2 w-2 rounded-full bg-[#EF233C] animate-ping" />
@@ -95,28 +91,38 @@ export default function LandingHero({
           </p>
         </div>
 
-        {/* Right Column: Visual Elegant Parchment Letter + Integrated Decorative Santa */}
+        {/* Right Column: Visual Elegant Parchment Letter + Integrated Decorative Santa in Sky */}
         <div className="lg:col-span-5 flex flex-col items-center justify-center relative z-20 w-full">
+          {/* Dedicated celestial flight corridor in the upper-right sky above the letter card */}
+          <div className="w-full relative h-28 sm:h-32 md:h-36 lg:h-40 flex items-end justify-end mb-2 sm:mb-3 pointer-events-none select-none">
+            <HeroSantaFlight />
+          </div>
 
           <div className="relative w-full max-w-[360px] sm:max-w-[400px] xl:max-w-[420px] mx-auto">
-            
             {/* North Pole Wax Seal Stamp */}
             <div 
               onClick={() => setEnvelopeOpen(!envelopeOpen)}
-              className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 z-30 wax-seal w-14 h-14 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center border-2 border-[#FFD166] text-[#FFD166] cursor-pointer hover:scale-105 transition-transform select-none"
-              title="Clique para abrir ou fechar a carta de demonstração"
+              className="absolute -top-4 -right-2 sm:-top-5 sm:-right-3 z-30 wax-seal w-14 h-14 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center border-2 border-[#FFD166] text-[#FFD166] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+              title="Clique para abrir ou fechar a carta"
+              id="seal-stamp"
             >
-              <span className="font-cinzel text-[7px] sm:text-[8px] font-black uppercase text-center leading-none tracking-tighter">
-                POLO<br/>NORTE
+              <span className="font-cinzel text-[8px] sm:text-[9px] font-extrabold uppercase leading-none text-center">
+                POLO NORTE
               </span>
-              <span className="text-[10px] sm:text-[11px] font-bold mt-0.5">2026</span>
+              <span className="font-mono text-[9px] sm:text-[10px] font-bold text-white leading-none mt-0.5">
+                2026
+              </span>
+              <span className="text-[7px] text-[#FFD166]/80 uppercase tracking-tighter mt-0.5">
+                OFICIAL
+              </span>
             </div>
 
-            {/* Letter Frame: Protagonist of the right side */}
-            <div 
+            {/* Vintage Parchment Preview Card */}
+            <div
               className={`relative z-20 parchment-bg text-[#1C2541] rounded-3xl p-5 sm:p-7 border-4 border-[#FFD166] magical-shadow transition-all duration-500 transform ${
                 envelopeOpen ? "rotate-0 scale-[1.01]" : "rotate-1 hover:rotate-0"
               }`}
+              id="hero-sample-letter-card"
             >
               {/* Header decorative bar */}
               <div className="flex justify-between items-center border-b-2 border-[#1C2541]/20 pb-3 sm:pb-4 mb-3 sm:mb-4">
@@ -171,48 +177,21 @@ export default function LandingHero({
               <div className="mt-3 pt-2 flex items-center justify-between text-xs font-semibold text-[#9B021A] border-t border-dashed border-[#1C2541]/20">
                 <button
                   onClick={onViewSample}
-                  className="hover:underline flex items-center gap-1 text-[11px]"
+                  className="hover:underline flex items-center gap-1 text-[11px] cursor-pointer"
+                  id="hero-listen-sample-btn"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
                   <span>Ouvir narração em áudio</span>
                 </button>
                 <button
                   onClick={() => onStartWizard("free")}
-                  className="hover:underline text-[11px] font-bold pr-2"
+                  className="hover:underline text-[11px] font-bold pr-2 cursor-pointer"
+                  id="hero-customize-btn"
                 >
                   Personalizar para seu filho →
                 </button>
               </div>
-
             </div>
-
-            {/* Decorative Santa Claus: Secondary, compact character (80-110px on desktop) integrated at bottom-right */}
-            <motion.div
-              animate={{
-                y: [0, -3, 0],
-              }}
-              transition={{
-                duration: 3.6,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="absolute -bottom-3 -right-2 sm:-bottom-4 sm:-right-3 lg:-bottom-4 lg:-right-4 xl:-right-5 z-30 pointer-events-none select-none flex items-end justify-end"
-              id="hero-santa-integrated"
-            >
-              <div className="relative">
-                {/* Soft subtle glow and shadow integrating Santa with the deep navy night sky */}
-                <div className="absolute inset-0 bg-[#FFD166]/20 rounded-full blur-md -z-10 scale-125" />
-                <img
-                  src={santaHeroImg}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/82f743e8-33ed-42f1-a5f7-6bbd8bf582b2.png";
-                  }}
-                  alt="Papai Noel Oficial - Carta Mágica"
-                  className="h-[75px] sm:h-[85px] lg:h-[95px] xl:h-[105px] w-auto object-contain filter drop-shadow-[0_6px_14px_rgba(0,0,0,0.65)] drop-shadow-[0_0_12px_rgba(255,209,102,0.25)]"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            </motion.div>
 
             {/* Little decorative ribbon under the card */}
             <div className="text-center mt-3">
@@ -220,10 +199,8 @@ export default function LandingHero({
                 ✨ Modelo interativo • 100% personalizável em segundos
               </span>
             </div>
-
           </div>
         </div>
-
       </div>
     </section>
   );

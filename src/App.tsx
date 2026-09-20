@@ -1,326 +1,93 @@
-import { useState, useEffect, type ReactNode } from "react";
-import SnowCanvas from "./components/SnowCanvas";
-import SantaSleigh from "./components/SantaSleigh";
-import ChristmasLights from "./components/ChristmasLights";
-import SantaWelcomeToast from "./components/SantaWelcomeToast";
+import { useState } from "react";
 import Navbar from "./components/Navbar";
 import LandingHero from "./components/LandingHero";
 import HowItWorks from "./components/HowItWorks";
-import SampleLetterPreview from "./components/SampleLetterPreview";
 import PricingSection from "./components/PricingSection";
-import FAQSection from "./components/FAQSection";
-import TestimonialsSection from "./components/TestimonialsSection";
-import FinalCTA from "./components/FinalCTA";
+import SnowCanvas from "./components/SnowCanvas";
+import SampleLetterPreview from "./components/SampleLetterPreview";
 import CreationWizard from "./components/CreationWizard";
 import LetterView from "./components/LetterView";
-import ChildPublicView from "./components/ChildPublicView";
-import AdminPanel from "./components/AdminPanel";
-import PaywallModal from "./components/PaywallModal";
-import CheckoutModal from "./components/CheckoutModal";
-import LogisticsModal from "./components/LogisticsModal";
-import MenuInfoModal, { MenuTab } from "./components/MenuInfoModal";
-import { AudioPlayer } from "./components/AudioPlayer";
-import { Letter, PlanType } from "./types";
-import { fetchLetterByTokenAPI } from "./services/api";
-import { initUTMTracking, trackEvent } from "./services/analytics";
-import { Heart, Sparkles, ShieldCheck } from "lucide-react";
-import { motion } from "motion/react";
-
-function FadeInScrollSection({ children }: { children: ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
+import { PlanType, Letter } from "./types";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"landing" | "wizard" | "letter" | "child" | "admin">("landing");
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("free");
-  const [currentLetter, setCurrentLetter] = useState<Letter | null>(null);
-
-  // Modals
-  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isLogisticsOpen, setIsLogisticsOpen] = useState(false);
-  const [menuInfoTab, setMenuInfoTab] = useState<MenuTab | null>(null);
-
-  // Handle URL paths and UTM initialization on mount
-  useEffect(() => {
-    initUTMTracking();
-    trackEvent("landing_view");
-
-    const path = window.location.pathname;
-    if (path.startsWith("/natal/")) {
-      const token = path.replace("/natal/", "").trim();
-      if (token) {
-        fetchLetterByTokenAPI(token).then((letter) => {
-          if (letter) {
-            setCurrentLetter(letter);
-            setCurrentView("child");
-          }
-        });
-      }
-    } else if (path === "/admin") {
-      setCurrentView("admin");
-    }
-  }, []);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isSampleOpen, setIsSampleOpen] = useState(false);
+  const [activeLetter, setActiveLetter] = useState<Letter | null>(null);
 
   const handleStartWizard = (plan: PlanType = "free") => {
-    trackEvent("start_letter", { plan });
     setSelectedPlan(plan);
-    setCurrentView("wizard");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsWizardOpen(true);
+  };
+
+  const handleScrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const handleLetterGenerated = (letter: Letter) => {
-    setCurrentLetter(letter);
-    setCurrentView("letter");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleOpenPaywall = () => {
-    setIsPaywallOpen(true);
-  };
-
-  const handleProceedToCheckout = () => {
-    trackEvent("checkout_started", { letterId: currentLetter?.id });
-    setIsPaywallOpen(false);
-    setIsCheckoutOpen(true);
-  };
-
-  const handleCheckoutSuccess = (upgradedLetterId: string) => {
-    trackEvent("purchase_completed", { letterId: upgradedLetterId, amount: 39.99 });
-    setIsCheckoutOpen(false);
-    if (currentLetter && currentLetter.id === upgradedLetterId) {
-      setCurrentLetter({ ...currentLetter, plan: "pro" });
-    }
-  };
-
-  const handleOpenMenuInfo = (tab: MenuTab) => {
-    trackEvent("menu_tab_clicked" as any, { tab });
-    setMenuInfoTab(tab);
-  };
-
-  const handleNavigateHome = () => {
-    setMenuInfoTab(null);
-    if (currentView !== "landing") {
-      setCurrentView("landing");
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const scrollToSection = (id: string) => {
-    if (currentView !== "landing") {
-      setCurrentView("landing");
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } else {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }
+    setIsWizardOpen(false);
+    setActiveLetter(letter);
   };
 
   return (
-    <div className="min-h-screen bg-[#060B19] text-[#EDF2F4] relative selection:bg-[#D90429] selection:text-white flex flex-col justify-between overflow-x-hidden w-full">
-      
-      {/* Subtle Interactive Falling Snow Canvas */}
+    <div className="min-h-screen bg-[#060B19] text-[#EDF2F4] relative flex flex-col selection:bg-[#FFD166] selection:text-[#060B19]">
+      {/* Falling snow atmospheric effect */}
       <SnowCanvas />
 
-      {/* Festive Glowing Christmas Fairy Lights along the top edge */}
-      <ChristmasLights />
+      {/* Navigation Header */}
+      <Navbar onStartWizard={handleStartWizard} onScrollTo={handleScrollTo} />
 
-      {/* Animated Santa Sleigh & Reindeer gliding across the night sky */}
-      <SantaSleigh />
+      {/* Main Landing Page Content */}
+      <main className="flex-1 w-full">
+        {/* Hero Section with Refined Santa Flight Animation */}
+        <LandingHero
+          onStartWizard={handleStartWizard}
+          onScrollTo={handleScrollTo}
+          onViewSample={() => setIsSampleOpen(true)}
+        />
 
-      {/* Header Navigation Bar */}
-      <Navbar
-        onNavigate={(v) => setCurrentView(v as any)}
-        onStartWizard={() => handleStartWizard("free")}
-        onOpenLogistics={() => handleOpenMenuInfo("rastreio")}
-        onOpenAdmin={() => setCurrentView("admin")}
-        currentView={currentView}
-        onOpenMenuInfo={handleOpenMenuInfo}
-        onNavigateHome={handleNavigateHome}
-      />
+        {/* How It Works Section */}
+        <HowItWorks onStartWizard={handleStartWizard} />
 
-      {/* Main View Switcher */}
-      <main className="flex-1 z-10 w-full overflow-x-hidden">
-        {currentView === "landing" && (
-          <div className="animate-in fade-in duration-300">
-            <LandingHero
-              onStartWizard={handleStartWizard}
-              onScrollTo={scrollToSection}
-              onViewSample={() => scrollToSection("amostra")}
-            />
-
-            <FadeInScrollSection>
-              <HowItWorks
-                onStartWizard={() => handleStartWizard("free")}
-                onOpenLogistics={() => setIsLogisticsOpen(true)}
-              />
-            </FadeInScrollSection>
-
-            <FadeInScrollSection>
-              <SampleLetterPreview
-                onStartWizard={handleStartWizard}
-              />
-            </FadeInScrollSection>
-
-            <FadeInScrollSection>
-              <TestimonialsSection />
-            </FadeInScrollSection>
-
-            <FadeInScrollSection>
-              <PricingSection
-                onStartWizard={handleStartWizard}
-                onOpenLogistics={() => setIsLogisticsOpen(true)}
-              />
-            </FadeInScrollSection>
-
-            <FadeInScrollSection>
-              <FAQSection />
-            </FadeInScrollSection>
-
-            <FadeInScrollSection>
-              <FinalCTA
-                onStartWizard={handleStartWizard}
-              />
-            </FadeInScrollSection>
-          </div>
-        )}
-
-        {currentView === "wizard" && (
-          <CreationWizard
-            initialPlan={selectedPlan}
-            onCancel={() => setCurrentView("landing")}
-            onLetterGenerated={handleLetterGenerated}
-          />
-        )}
-
-        {currentView === "letter" && currentLetter && (
-          <LetterView
-            letter={currentLetter}
-            onBackToDashboard={() => setCurrentView("landing")}
-            onOpenPaywall={handleOpenPaywall}
-            onOpenChildPage={(l) => {
-              setCurrentLetter(l);
-              setCurrentView("child");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            onOpenLogistics={() => setIsLogisticsOpen(true)}
-          />
-        )}
-
-        {currentView === "child" && currentLetter && (
-          <ChildPublicView
-            letter={currentLetter}
-            onGoHome={() => setCurrentView("landing")}
-            onCreateFreeLetter={() => handleStartWizard("free")}
-          />
-        )}
-
-        {currentView === "admin" && (
-          <AdminPanel
-            onBack={() => setCurrentView("landing")}
-            onViewLetter={(l) => {
-              setCurrentLetter(l);
-              setCurrentView("letter");
-            }}
-          />
-        )}
+        {/* Pricing & Value Section */}
+        <PricingSection onSelectPlan={handleStartWizard} />
       </main>
 
       {/* Footer */}
-      <footer className="no-print bg-[#03060E] border-t border-white/10 py-12 px-4 z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[#EDF2F4]/60">
-          
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#D90429] flex items-center justify-center text-white font-black text-sm border border-[#FFD166]/60">
-              🎅
-            </div>
-            <div>
-              <span className="font-cinzel text-sm font-bold text-white block">
-                CARTA MÁGICA
-              </span>
-              <span>Experiências Personalizadas de Natal © 2026</span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <button onClick={() => handleOpenMenuInfo("como-funciona")} className="hover:text-white cursor-pointer">
-              Como Funciona
-            </button>
-            <button onClick={() => scrollToSection("depoimentos")} className="hover:text-white cursor-pointer">
-              Depoimentos
-            </button>
-            <button onClick={() => handleOpenMenuInfo("planos")} className="hover:text-white cursor-pointer">
-              Planos & Preços
-            </button>
-            <button onClick={() => handleOpenMenuInfo("faq")} className="hover:text-white cursor-pointer">
-              Dúvidas FAQ
-            </button>
-            <button onClick={() => handleOpenMenuInfo("rastreio")} className="hover:text-white cursor-pointer">
-              Envio Postal Físico
-            </button>
-            <button onClick={() => setCurrentView("admin")} className="hover:text-[#FFD166] text-[11px] font-mono cursor-pointer">
-              Área Admin
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px]">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Privacidade infantil protegida por design</span>
-          </div>
-
+      <footer className="w-full border-t border-white/10 bg-[#040812] py-8 text-center text-xs text-[#EDF2F4]/60">
+        <div className="max-w-6xl mx-auto px-4 space-y-2">
+          <p className="font-cinzel text-sm text-[#FFD166]">
+            Carta Mágica do Papai Noel • Polo Norte 2026
+          </p>
+          <p>
+            Transformando o Natal das crianças com inteligência artificial, carinho e memórias inesquecíveis.
+          </p>
+          <p className="text-[10px] text-[#EDF2F4]/40 pt-2">
+            © 2026 Carta Mágica. Todos os direitos reservados.
+          </p>
         </div>
       </footer>
 
-      {/* Discrete Ambient Christmas Audio Player */}
-      <AudioPlayer />
-
-      {/* Festive Santa Welcome Toast (smoothly triggered 3s after load) */}
-      <SantaWelcomeToast onStartWizard={handleStartWizard} />
-
-      {/* Interactive Menu Explanations Modal */}
-      <MenuInfoModal
-        isOpen={menuInfoTab !== null}
-        activeTab={menuInfoTab}
-        onClose={() => setMenuInfoTab(null)}
-        onSelectTab={(tab) => setMenuInfoTab(tab)}
-        onStartWizard={(plan = "free") => {
-          setMenuInfoTab(null);
-          handleStartWizard(plan);
-        }}
+      {/* Interactive Modals */}
+      <SampleLetterPreview
+        isOpen={isSampleOpen}
+        onClose={() => setIsSampleOpen(false)}
+        onStartCustomization={() => handleStartWizard("pro")}
       />
 
-      {/* MODALS */}
-      <PaywallModal
-        isOpen={isPaywallOpen}
-        onClose={() => setIsPaywallOpen(false)}
-        onProceedToCheckout={handleProceedToCheckout}
+      <CreationWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        plan={selectedPlan}
+        onGenerated={handleLetterGenerated}
       />
 
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        letter={currentLetter}
-        onClose={() => setIsCheckoutOpen(false)}
-        onSuccess={handleCheckoutSuccess}
-      />
-
-      <LogisticsModal
-        isOpen={isLogisticsOpen}
-        onClose={() => setIsLogisticsOpen(false)}
-        onStartOrder={() => handleStartWizard("pro")}
-      />
-
+      {activeLetter && (
+        <LetterView letter={activeLetter} onClose={() => setActiveLetter(null)} />
+      )}
     </div>
   );
 }
